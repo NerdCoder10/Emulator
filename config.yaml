@@ -1,0 +1,30 @@
+emulator:
+  # "avd" = start an Android Studio emulator; "connect" = attach to BlueStacks/LDPlayer/MuMu over adb
+  mode: avd
+  avd_name: TopWar              # create with Android Studio's Device Manager (Google Play image, 1280x720)
+  binary: emulator              # or full path, e.g. ~/Android/Sdk/emulator/emulator
+  headless: false
+  address: 127.0.0.1:5555       # used when mode: connect (BlueStacks default; LDPlayer 5555, MuMu 7555)
+  serial: null                  # pin a specific adb device if several are attached
+  adb: adb
+  install_apk: null             # optional path to a Top War APK to install if missing
+
+game:
+  package: com.topwar.gp        # check with: adb shell pm list packages | grep -i war
+  startup_wait: 25
+
+templates_dir: templates
+
+bot:
+  unit_threshold: 0.88          # raise if units get mixed up, lower if they're missed
+  button_threshold: 0.85
+  battlefield_region: null      # [x1, y1, x2, y2] of the merge grid; limits false matches
+  base_slots: null              # set to your base's slot count to auto-buy units into empty slots
+  max_merge_level: null         # stop merging at this level (null = merge everything)
+  merge_lowest_first: true      # frees slots fastest and lets merges chain upward
+  max_merge_passes: 15
+  drag_ms: 450
+  merge_delay: 0.6
+  tap_delay: 0.5
+  cycle_delay: 5
+  tap_jitter: 3
