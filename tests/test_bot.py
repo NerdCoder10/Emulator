@@ -1,6 +1,7 @@
 """Offline tests using synthetic screens and a fake device (no emulator needed)."""
 import cv2
 import numpy as np
+import pytest
 
 from topwar_bot.bot import TopWarBot
 from topwar_bot.merge import detect_units, parse_unit, plan_merges
@@ -83,11 +84,16 @@ class FakeDevice:
             lvl = self.units.pop(src)
             self.units[dst] = lvl + 1
 
+    def drag_path(self, points, duration_ms):
+        (x1, y1), (x2, y2) = points[0], points[-1]
+        self.drag(x1, y1, x2, y2)
+
     def tap(self, x, y): pass
-    def sleep(self, *a, **k): pass
+    def press(self, x, y, ms): pass
 
 
-def test_merge_round_chains_to_highest_level(tmp_path):
+@pytest.mark.parametrize("human", [{"enabled": False}, {"enabled": True, "miss_chance": 0}])
+def test_merge_round_chains_to_highest_level(tmp_path, human):
     tmpls = {lvl: make_template() for lvl in range(1, 5)}
     (tmp_path / "units").mkdir()
     (tmp_path / "buttons").mkdir()
@@ -98,8 +104,9 @@ def test_merge_round_chains_to_highest_level(tmp_path):
     dev = FakeDevice(tmpls, {(150, 150): 1, (350, 150): 1, (550, 150): 1, (750, 150): 1})
     cfg = {"templates_dir": str(tmp_path), "game": {"package": "x"}, "bot": {
         "unit_threshold": 0.9, "button_threshold": 0.85, "max_merge_passes": 10,
-        "merge_lowest_first": True, "drag_ms": 1, "merge_delay": 0, "tap_delay": 0}}
+        "merge_lowest_first": True}, "human": human}
     bot = TopWarBot(cfg, dev)
+    bot.human.sleeper = lambda s: None
     assert bot.merge_round() == 3
     assert list(dev.units.values()) == [3]
     assert Templates(tmp_path / "units")

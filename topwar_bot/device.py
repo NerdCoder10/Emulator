@@ -47,6 +47,23 @@ class Device:
         x2, y2 = self._jitter(x2, y2)
         self.shell(f"input swipe {x1} {y1} {x2} {y2} {duration_ms}")
 
+    def press(self, x, y, duration_ms):
+        """Tap with a chosen finger-down time (a zero-length swipe)."""
+        self.shell(f"input swipe {x} {y} {x} {y} {duration_ms}")
+
+    def drag_path(self, points, duration_ms):
+        """Drag through a list of points in one gesture (Android 11+ `input motionevent`)."""
+        step = duration_ms / 1000 / max(1, len(points) - 1)
+        (x0, y0), *rest = points
+        cmds = [f"input motionevent DOWN {x0} {y0}"]
+        for x, y in rest:
+            cmds += [f"sleep {step:.3f}", f"input motionevent MOVE {x} {y}"]
+        x, y = points[-1]
+        cmds.append(f"input motionevent UP {x} {y}")
+        out = self.shell(" && ".join(cmds))
+        if "Error" in out or "Unknown" in out:
+            raise RuntimeError(out)
+
     def back(self):
         self.shell("input keyevent KEYCODE_BACK")
 

@@ -63,7 +63,7 @@ def ensure_running(cfg) -> Device:
                 time.sleep(2)
         serial = serial or (adb_devices(adb) or [None])[0]
 
-    device = Device(serial=serial, adb=adb, tap_jitter=cfg["bot"].get("tap_jitter", 3))
+    device = Device(serial=serial, adb=adb, tap_jitter=0)  # humanizer handles scatter
     wait_for_boot(device)
 
     apk = emu.get("install_apk")

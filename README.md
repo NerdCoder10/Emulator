@@ -52,8 +52,20 @@ python -m topwar_bot.bot --cycles 20 -v
 | `battlefield_region` | `[x1,y1,x2,y2]` of the merge grid. Speeds up scans and stops false matches |
 | `base_slots` | Number of grid slots. Turns on auto-buy into empty slots |
 | `max_merge_level` | Stop merging at a level (e.g. to keep units for a formation) |
-| `merge_delay`, `tap_delay`, `cycle_delay` | Lower = faster, but too low and the game drops inputs |
+| `cycle_delay` | Base wait between cycles |
 | `unit_threshold` | Raise if units are confused, lower if they're missed |
+
+## Human-like behaviour (`config.yaml` → `human`)
+
+On by default, so the bot plays like a person instead of a metronome:
+
+- **Reaction times** follow a natural (log-normal) spread, with occasional longer hesitations.
+- **Taps** land at scattered spots around each target and hold for varying lengths.
+- **Drags** follow curved paths that speed up and slow down (Android 11+; older versions fall back to straight swipes of varying speed).
+- **Imperfection:** it sometimes overlooks a target until the next cycle and doesn't always merge in the same order.
+- **Sessions:** it plays for 25-70 minutes, then breaks for 4-25. It idles now and then, and only plays during `active_hours`.
+
+Set `human.enabled: false` for maximum speed. Lower `reaction_mean` or shorten the breaks to trade realism for speed.
 
 ## Tests
 

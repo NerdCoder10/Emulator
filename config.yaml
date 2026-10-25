@@ -23,8 +23,18 @@ bot:
   max_merge_level: null         # stop merging at this level (null = merge everything)
   merge_lowest_first: true      # frees slots fastest and lets merges chain upward
   max_merge_passes: 15
-  drag_ms: 450
-  merge_delay: 0.6
-  tap_delay: 0.5
   cycle_delay: 5
-  tap_jitter: 3
+
+# Makes the bot behave like a person. See topwar_bot/human.py for all options.
+human:
+  enabled: true
+  reaction_mean: 0.55           # typical seconds between actions
+  hesitation_chance: 0.06       # occasional longer pause
+  tap_spread: 6                 # px scatter around each target
+  curved_drags: true            # curved, eased drags (Android 11+), else straight swipes
+  miss_chance: 0.04             # sometimes overlook a target until the next cycle
+  shuffle_chance: 0.3           # sometimes merge in a looser order
+  session_minutes: [25, 70]     # play this long...
+  break_minutes: [4, 25]        # ...then take a break
+  idle_chance: 0.08             # short idle pauses during play
+  active_hours: [8, 23]         # only play 08:00-23:00 (null = any time)

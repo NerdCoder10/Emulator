@@ -17,6 +17,7 @@ from pathlib import Path
 import yaml
 
 from . import emulator
+from .human import Human
 from .merge import detect_units, plan_merges, summarize
 from .vision import Templates, find_all, find_best
 
@@ -29,6 +30,7 @@ class TopWarBot:
         self.cfg = cfg
         self.bot_cfg = cfg["bot"]
         self.device = device
+        self.human = Human(cfg.get("human"))
         tdir = ROOT / cfg["templates_dir"]
         self.units = Templates(tdir / "units")
         self.buttons = Templates(tdir / "buttons")
@@ -44,13 +46,15 @@ class TopWarBot:
         taps = 0
         thr = self.bot_cfg["button_threshold"]
         for name, tmpl in self._buttons(prefix):
-            for m in find_all(screen, tmpl, name, thr):
+            for m in self.human.order(find_all(screen, tmpl, name, thr)):
                 if taps >= max_taps:
                     return taps
-                self.device.tap(m.x, m.y)
+                if not self.human.notices():
+                    continue
+                self.human.pause()
+                self.human.tap(self.device, m.x, m.y)
                 self.stats[name] += 1
                 taps += 1
-                self.device.sleep(self.bot_cfg["tap_delay"])
         return taps
 
     def ensure_game(self):
@@ -58,7 +62,7 @@ class TopWarBot:
         if not self.device.is_app_foreground(package):
             log.info("Launching %s", package)
             self.device.start_app(package)
-            self.device.sleep(self.cfg["game"]["startup_wait"])
+            self.human.sleeper(self.cfg["game"]["startup_wait"] + self.human.delay(4))
 
     def dismiss_popups(self):
         for _ in range(5):
@@ -88,11 +92,15 @@ class TopWarBot:
                 if not self.fill_slots(len(units)):
                     break
                 continue
-            for src, dst in plan:
-                self.device.drag(src.x, src.y, dst.x, dst.y, self.bot_cfg["drag_ms"])
+            for src, dst in self.human.order(plan):
+                if not self.human.notices():
+                    continue
+                self.human.pause()
+                self.human.drag(self.device, src.x, src.y, dst.x, dst.y)
                 self.stats[f"merge:{src.name}"] += 1
                 total += 1
-                self.device.sleep(self.bot_cfg["merge_delay"])
+            # Look at the result before scanning again.
+            self.human.pause(1.5)
         if total:
             log.info("Merged %d pairs", total)
         return total
@@ -107,9 +115,9 @@ class TopWarBot:
             btn = find_best(self.device.screenshot(), tmpl, name, thr)
             if btn:
                 for _ in range(slots - unit_count):
-                    self.device.tap(btn.x, btn.y)
+                    self.human.pause(0.6)
+                    self.human.tap(self.device, btn.x, btn.y)
                     self.stats[name] += 1
-                    self.device.sleep(self.bot_cfg["tap_delay"])
                 return slots - unit_count
         return 0
 
@@ -117,6 +125,8 @@ class TopWarBot:
         cycle = 0
         while cycles is None or cycle < cycles:
             cycle += 1
+            if self.human.rest_if_needed():
+                continue
             try:
                 self.ensure_game()
                 self.dismiss_popups()
@@ -127,7 +137,7 @@ class TopWarBot:
                 self.device.back()
             if cycle % 10 == 0:
                 log.info("Stats after %d cycles: %s", cycle, dict(self.stats))
-            self.device.sleep(self.bot_cfg["cycle_delay"])
+            self.human.sleeper(self.bot_cfg["cycle_delay"] + self.human.delay(3))
 
 
 def load_config(path):
